@@ -22,7 +22,7 @@ MIT · [GitHub](https://github.com/Wu-Z/dsh-model-advisor)
 | 面板 · 排序 | 默认 / 价格（点一下在 ↑↓ 之间切换）/ 最新；无价格的模型始终排在最后 |
 | 面板 · API 费用 | 每百万 token 的输入 / 输出价格，USD / CNY 分段开关切换；DeepSeek 显示官方峰谷两档价并标出当前档位 |
 | 面板 · 数据来源 | 页脚常驻一行：**余额来源**（跟着当前模型走）+ **模型列表来源**（models.dev） |
-| 刷新 | 服务启动时预热一次；之后展开面板、点余额、点「刷新」才请求，无后台轮询 |
+| 刷新 | **余额每 5 分钟自动刷新**（间隔可配），页面隐藏时暂停、切回立即刷新；模型目录按需拉取（展开面板 / 搜索 / 筛选时才查），无目录轮询 |
 
 ## 安装
 
@@ -55,6 +55,15 @@ dsh plugin --profile web add /absolute/path/to/dsh-model-advisor
 | USD → CNY 汇率 | <https://open.er-api.com/v6/latest/USD> | 缓存 12 小时，失败回退配置值 |
 
 密钥只在 Host 进程内使用，绝不下发浏览器。
+
+### 余额怎么更新
+
+- **每 5 分钟自动刷新一次**（`balanceRefreshMinutes` 可配，范围 1 分钟–24 小时）；
+- 点左下角的余额文字可**立即刷新**；
+- 浏览器标签页隐藏时暂停轮询，切回来自动刷新一次再继续——避免后台空跑；
+- 余额是唯一会定期请求的数据；**模型目录仍然只在展开面板、搜索或筛选时才查**。
+
+一轮刷新只发一次请求（约百字节），Host 侧还有 5 分钟缓存兜底，所以不会打爆接口。
 
 ## 价格口径
 
@@ -152,7 +161,7 @@ models.dev 上 DeepSeek 的价格是**改版前的旧基础价**（v4-flash $0.1
 |---|---|---|
 | `currency` | `USD` | 面板显示币种，`USD` 或 `CNY` |
 | `fxRate` | `7.2` | 实时汇率不可用时的兜底 USD→CNY |
-| `balanceRefreshMinutes` | `5` | 余额缓存有效期 |
+| `balanceRefreshMinutes` | `5` | 余额自动刷新间隔（分钟，1–1440）；页面隐藏时不轮询 |
 | `catalogTtlHours` | `6` | models.dev 缓存有效期 |
 | `customBalance` | 关闭 | 自定义余额端点：`url` / `method` / `headerName` / `credentialRef` / `path`（点路径，如 `data.total_available`）/ `currency` |
 

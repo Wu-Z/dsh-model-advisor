@@ -92,14 +92,23 @@ models.dev 汇总了 200+ 个渠道，**同一个模型在不同渠道价格不�
 ## 安装
 
 ```bash
-# 从 GitHub 安装（安装时自动构建 lib/）
-dsh plugin --profile web add github:Wu-Z/dsh-model-advisor
+dsh plugin --profile web add dsh-model-advisor
+```
 
-# 或从本地目录安装
-dsh plugin --profile web add /path/to/dsh-model-advisor
+npm 包内含构建好的 `lib/`，**安装时不执行任何构建脚本**（pnpm 11 默认拦截依赖的 build 脚本，所以这一点很重要）。
+
+从源码构建：
+
+```bash
+git clone https://github.com/Wu-Z/dsh-model-advisor.git
+cd dsh-model-advisor
+npm install && npm run build
+dsh plugin --profile web add /absolute/path/to/dsh-model-advisor
 ```
 
 安装后**重启 `dsh web`**：新增 bundle 属于 profile 组合变更，`patchReload: live` 只热重载用户 patch 文件，不会重读 bundles 列表。
+
+> ⚠️ 不要用 `dsh plugin add github:Wu-Z/dsh-model-advisor`。pnpm 11 会因 `ERR_PNPM_GIT_DEP_PREPARE_NOT_ALLOWED` 拒绝安装——本仓库不提交 `lib/`，而 git 依赖的构建脚本默认被拦。
 
 ## 配置
 

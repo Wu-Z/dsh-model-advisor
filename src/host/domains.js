@@ -121,7 +121,7 @@ export function summaryFor(model, tags) {
   if (model.vision === true) parts.push('支持图像输入')
   const context = tokens(model.context)
   if (context.length > 0) parts.push(`${context} 上下文`)
-  if (model.openWeights === true) parts.push('开放权重')
+  // `开放权重` is a filterable strength tag now, so it is not repeated here.
   if (parts.length === 0 && tags.length > 0) parts.push(`擅长${tags.slice(0, 2).join('、')}`)
   return parts.join(' · ')
 }

@@ -6,6 +6,8 @@
  * namespace, and owns the panel's transient UI state.
  */
 
+import { balanceRefreshIntervalMs } from './schedule.js'
+
 const SEARCH_DEBOUNCE_MS = 220
 
 /** Unwrap a RemoteResult, returning the value or throwing the failure. */
@@ -39,6 +41,42 @@ export function createAdvisorStore(ctx) {
   const listeners = new Set()
   let searchTimer = null
   let searchSequence = 0
+  let balanceTimer = null
+
+  /** Stop the periodic balance poll. */
+  const clearBalanceTimer = () => {
+    if (balanceTimer !== null) {
+      clearInterval(balanceTimer)
+      balanceTimer = null
+    }
+  }
+
+  /**
+   * Poll the balance on the configured cadence so the chip stays current
+   * without the user touching it. A hidden tab is left alone.
+   */
+  const scheduleBalancePoll = () => {
+    clearBalanceTimer()
+    if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return
+    balanceTimer = setInterval(
+      () => { refreshBalanceNow() },
+      balanceRefreshIntervalMs(state.data?.config?.balanceRefreshMinutes),
+    )
+  }
+
+  const onVisibilityChange = () => {
+    if (typeof document === 'undefined') return
+    if (document.visibilityState === 'hidden') {
+      clearBalanceTimer()
+      return
+    }
+    // Coming back to the tab: show a fresh number immediately, then resume.
+    refreshBalanceNow()
+    scheduleBalancePoll()
+  }
+  if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+    document.addEventListener('visibilitychange', onVisibilityChange)
+  }
 
   const publish = (patch) => {
     state = { ...state, ...patch }
@@ -49,6 +87,7 @@ export function createAdvisorStore(ctx) {
 
   const applySnapshot = (value, patch = {}) => {
     const currency = state.currency.length > 0 ? state.currency : value?.config?.currency ?? 'USD'
+    scheduleBalancePoll()
     publish({
       phase: 'ready',
       error: '',
@@ -100,6 +139,22 @@ export function createAdvisorStore(ctx) {
     }
   }
 
+  /** Read the balance once; shared by the click handler and the poller. */
+  const refreshBalanceNow = () => {
+    const remote = namespace()
+    if (remote === undefined) return
+    if (state.balanceBusy) return
+    publish({ balanceBusy: true })
+    void (async () => {
+      try {
+        const value = unwrap(await remote.refreshBalance())
+        applySnapshot(value, { balanceBusy: false })
+      } catch (error) {
+        publish({ balanceBusy: false, error: String(error?.message ?? error) })
+      }
+    })()
+  }
+
   return {
     subscribe(listener) {
       listeners.add(listener)
@@ -121,17 +176,7 @@ export function createAdvisorStore(ctx) {
     },
     /** Re-read just the account balance, for the footer chip's own click. */
     refreshBalance() {
-      const remote = namespace()
-      if (remote === undefined) return
-      publish({ balanceBusy: true })
-      void (async () => {
-        try {
-          const value = unwrap(await remote.refreshBalance())
-          applySnapshot(value, { balanceBusy: false })
-        } catch (error) {
-          publish({ balanceBusy: false, error: String(error?.message ?? error) })
-        }
-      })()
+      refreshBalanceNow()
     },
     toggleOpen() {
       const open = !state.open
@@ -164,6 +209,14 @@ export function createAdvisorStore(ctx) {
         : [...state.modalities, label]
       publish({ modalities })
       void runSearch(state.query, state.domains, modalities)
+    },
+    /** Tear down timers and listeners with the owning fiber. */
+    dispose() {
+      clearBalanceTimer()
+      if (searchTimer !== null) clearTimeout(searchTimer)
+      if (typeof document !== 'undefined' && typeof document.removeEventListener === 'function') {
+        document.removeEventListener('visibilitychange', onVisibilityChange)
+      }
     },
     /** Drop every facet, keeping the search text. */
     clearFilters() {

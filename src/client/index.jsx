@@ -24,6 +24,7 @@ export async function apply(ctx) {
   }
 
   const store = createAdvisorStore(ctx)
+  ctx.effect(() => () => store.dispose(), 'model-advisor: store lifetime')
   ctx.slots.inject('sidebar.footer.action', () => ctx.slots.register({
     name: 'sidebar.footer.action',
     id: 'model-advisor',

@@ -424,6 +424,65 @@ try {
   check('sorting', false, String(error?.message ?? error))
 }
 
+
+// 7. the footer balance polls on the configured cadence and stops on dispose
+try {
+  const { createAdvisorStore } = await import('../src/client/store.js')
+  const { balanceRefreshIntervalMs } = await import('../src/client/schedule.js')
+  check('interval defaults to 5 min', balanceRefreshIntervalMs(undefined) === 300_000
+    && balanceRefreshIntervalMs(5) === 300_000, `${balanceRefreshIntervalMs(undefined)}`)
+  check('interval clamps low', balanceRefreshIntervalMs(0) === 60_000, `${balanceRefreshIntervalMs(0)}`)
+  check('interval clamps high', balanceRefreshIntervalMs(9999) === 86_400_000, `${balanceRefreshIntervalMs(9999)}`)
+
+  const snapshot = {
+    ok: true,
+    value: {
+      config: { currency: 'CNY', fxRate: 7.2, fxLive: true, fxFetchedAt: Date.now(), balanceRefreshMinutes: 5, catalogTtlHours: 6, customBalance: { enabled: false, url: '', method: 'GET', headerName: '', credentialRef: '', path: '', currency: 'USD' }, domains: [], modalities: [] },
+      balance: { ok: true, currency: 'CNY', total: 1, granted: 0, toppedUp: 1, source: 'deepseek', message: '', fetchedAt: Date.now() },
+      catalog: { fetchedAt: Date.now(), count: 1, stale: false, message: '' },
+      configured: [], featured: [],
+      sources: { balance: { kind: 'deepseek', label: '', url: '', channel: 'deepseek' }, catalog: { label: 'models.dev', url: '' } },
+      updatedAt: Date.now(),
+    },
+  }
+  let balanceCalls = 0
+  const remote = {
+    getSnapshot: async () => snapshot,
+    refresh: async () => snapshot,
+    refreshBalance: async () => { balanceCalls += 1; return snapshot },
+    search: async () => ({ ok: true, value: { rows: [] } }),
+    updateConfig: async () => snapshot,
+  }
+  const ctx = { get: key => (key === 'remote.modelAdvisor' ? remote : undefined) }
+
+  const intervals = []
+  const cleared = []
+  const realSetInterval = globalThis.setInterval
+  const realClearInterval = globalThis.clearInterval
+  globalThis.setInterval = (fn, ms) => { intervals.push({ fn, ms }); return intervals.length }
+  globalThis.clearInterval = id => { cleared.push(id) }
+
+  globalThis.document.visibilityState = 'visible'
+  const store = createAdvisorStore(ctx)
+  store.ensureLoaded()
+  await new Promise(resolve => setTimeout(resolve, 30))
+
+  check('balance poll scheduled', intervals.length === 1 && intervals[0].ms === 300_000,
+    `${intervals.length} timer(s), ${intervals[0]?.ms ?? '-'} ms`)
+  if (intervals.length > 0) {
+    intervals[0].fn()
+    await new Promise(resolve => setTimeout(resolve, 10))
+    check('poll reads the balance', balanceCalls === 1, `${balanceCalls} call(s)`)
+  }
+  store.dispose()
+  check('dispose clears the poll', cleared.length >= 1, `${cleared.length} cleared`)
+
+  globalThis.setInterval = realSetInterval
+  globalThis.clearInterval = realClearInterval
+} catch (error) {
+  check('balance polling', false, String(error?.message ?? error))
+}
+
 const failed = results.filter(ok => !ok).length
 process.stdout.write(`\n${results.length - failed}/${results.length} passed\n`)
 process.exit(failed === 0 ? 0 : 1)

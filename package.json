@@ -1,0 +1,70 @@
+{
+  "name": "dsh-model-advisor",
+  "version": "0.1.0",
+  "description": "DeepSeek Harness 模型顾问插件:左下角固定显示账户余额,点开查看各模型擅长的领域、API 费用(USD/¥)与配置链接。Model advisor plugin for DeepSeek Harness: a sidebar balance chip that opens a model capability, pricing and configuration panel.",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": {
+      "default": "./lib/index.js"
+    },
+    "./client": {
+      "default": "./lib/client.js"
+    },
+    "./typert": {
+      "default": "./lib/typert.host.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web"
+    }
+  },
+  "files": [
+    "lib",
+    "src",
+    "scripts",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "deepseek",
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "models",
+    "pricing",
+    "balance",
+    "web-ui"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "zod": "4.5.1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "prepare": "node scripts/build.mjs",
+    "test": "node scripts/smoke.mjs && node scripts/render-test.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Wu-Z/dsh-model-advisor.git"
+  },
+  "homepage": "https://github.com/Wu-Z/dsh-model-advisor#readme",
+  "bugs": {
+    "url": "https://github.com/Wu-Z/dsh-model-advisor/issues"
+  }
+}

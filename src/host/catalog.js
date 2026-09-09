@@ -10,7 +10,6 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname } from 'node:path'
 import { applyPriceTags, hasVision, MODALITY_FILTERS, summaryFor, tagsFor } from './domains.js'
-import { linksFor } from './links.js'
 import { catalogPath } from './paths.js'
 
 const CATALOG_URL = 'https://models.dev/api.json'
@@ -74,7 +73,6 @@ function projectRow(providerId, providerName, providerDoc, model) {
   // is not a free model. Treating it as priced also wrongly won the cheapest
   // price tag and sorted these rows to the top.
   const priced = cost !== null && (cost.input > 0 || cost.output > 0) ? cost : null
-  const links = linksFor(providerId, providerDoc)
   const base = {
     key: `${providerId}/${id}`,
     provider: providerId,
@@ -92,8 +90,6 @@ function projectRow(providerId, providerName, providerDoc, model) {
     context: decimal(model?.limit?.context),
     maxOutput: decimal(model?.limit?.output),
     cost: priced,
-    doc: links.doc,
-    consoleUrl: links.consoleUrl,
     releaseDate: text(model?.release_date, 20),
   }
   const domains = tagsFor(base)
@@ -426,7 +422,7 @@ export function findRow(rows, provider, modelId) {
  * @param links - precomputed link set for the provider.
  * @returns a JSON-safe row marked `source: 'local'`.
  */
-export function localRow(provider, model, links) {
+export function localRow(provider, model) {
   const id = text(model?.id, 200)
   const base = {
     key: `${provider}/${id}`,
@@ -445,8 +441,6 @@ export function localRow(provider, model, links) {
     context: decimal(model?.contextWindow),
     maxOutput: decimal(model?.maxTokens),
     cost: null,
-    doc: links.doc,
-    consoleUrl: links.consoleUrl,
     releaseDate: '',
   }
   const domains = tagsFor(base)

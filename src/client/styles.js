@@ -175,7 +175,6 @@ export const CSS = `
 .ma-price-note { font-size: 10px; line-height: 14px; color: var(--dsw-alias-label-tertiary, #888) }
 .ma-tier { font-size: 11px; line-height: 16px; color: var(--dsw-alias-label-tertiary, #888) }
 .ma-tier.is-active { color: var(--dsw-alias-label-primary, #111); font-weight: 600 }
-.ma-row-links { display: flex; gap: 8px; justify-content: flex-end; margin-top: 2px }
 .ma-row-link {
   color: var(--dsw-alias-link, #2563eb); text-decoration: none; white-space: nowrap; font-size: 11px;
 }

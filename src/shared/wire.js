@@ -59,8 +59,6 @@ export const modelRowSchema = z.object({
   context: num,
   maxOutput: num,
   cost: z.union([costSchema, z.null()]),
-  doc: z.string(),
-  consoleUrl: z.string(),
   releaseDate: z.string(),
   configured: z.boolean(),
   isDefault: z.boolean(),

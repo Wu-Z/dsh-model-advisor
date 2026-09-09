@@ -14,7 +14,10 @@ const PRICING_URL_USD = 'https://api-docs.deepseek.com/quick_start/pricing'
 const PRICING_URL_CNY = 'https://api-docs.deepseek.com/zh-cn/quick_start/pricing'
 const REQUEST_TIMEOUT_MS = 20_000
 
-/** Peak windows in UTC hours; a Beijing-time weekend is entirely off-peak. */
+/**
+ * Peak windows in UTC hours — 01:00–04:00 and 06:00–10:00, i.e. 09:00–12:00 and
+ * 14:00–18:00 Beijing time (UTC+8). A Beijing-time weekend is entirely off-peak.
+ */
 const PEAK_HOURS = [[1, 4], [6, 10]]
 
 /** Bundled fallback: USD per 1M tokens, from the official English page. */

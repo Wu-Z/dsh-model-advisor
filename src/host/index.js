@@ -24,7 +24,6 @@ import {
 import { DOMAIN_TAGS, normalizeConfig, readStoredConfig, writeStoredConfig } from './config.js'
 import { MODALITY_TAGS } from './domains.js'
 import { readDeepSeekPricing } from './deepseek.js'
-import { linksFor } from './links.js'
 
 /** Cordis plugin name. */
 export const name = 'model-advisor'
@@ -403,7 +402,6 @@ export function apply(ctx, rawConfig) {
           const onChannel = findChannelRow(state.rows, channel, modelId)
           const owner = findRow(state.rows, channel, modelId)
           const hit = onChannel ?? owner
-          const links = linksFor(channel.length > 0 ? channel : catalogProviderFor(providerId), hit?.doc ?? '')
           const row = hit === null
             ? localRow(catalogProviderFor(providerId), {
               id: modelId,
@@ -413,7 +411,7 @@ export function apply(ctx, rawConfig) {
               contextWindow: resolved?.contextWindow,
               maxTokens: resolved?.maxTokens ?? resolved?.defaultMaxTokens,
               reasoning: resolved?.reasoning !== undefined,
-            }, links)
+            })
             : { ...hit, configured: true }
           row.configured = true
           row.isDefault = providerId === defaultProvider && modelId === defaultModel

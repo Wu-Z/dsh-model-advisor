@@ -146,14 +146,6 @@ function ModelRow({ row, currency, fxRate, t }) {
                 {row.priceFallback === true && <div className="ma-price-note">{t('panel.price.fallback')}</div>}
               </div>
             )}
-        <div className="ma-row-links">
-          {row.consoleUrl.length > 0 && (
-            <a className="ma-row-link" href={row.consoleUrl} target="_blank" rel="noreferrer">{t('panel.link.console')}</a>
-          )}
-          {row.doc.length > 0 && (
-            <a className="ma-row-link" href={row.doc} target="_blank" rel="noreferrer">{t('panel.link.doc')}</a>
-          )}
-        </div>
       </div>
 
       <div className="ma-row-meta">{meta}</div>

@@ -1,14 +1,38 @@
 /**
- * The fixed footer action, two independent targets:
+ * The fixed footer action, three parts:
  *   - the balance text refreshes the balance in place;
+ *   - a peak / off-peak badge (DeepSeek routes only);
  *   - the chevron button opens the model advisor panel.
  */
 
 import * as React from 'react'
 import { IconChevronDownOutline14, IconChevronRightOutline14 } from '@deepseek-ai/dsh-client-ui-primitives'
 import { createPortal } from 'react-dom'
-import { formatMoney } from './format.js'
+import { currentTier, formatBeijingSwitch, formatDuration, formatMoney, nextTierSwitch } from './format.js'
 import { Panel } from './Panel.jsx'
+import { PeakIcon, ValleyIcon } from './tier-icons.jsx'
+
+/** Interpolate `{name}` placeholders in a dictionary string. */
+function fill(template, values) {
+  return template.replace(/\{(\w+)\}/g, (_, key) => String(values[key] ?? ''))
+}
+
+/**
+ * Re-render once a minute while the badge is visible, so the tier flips on the
+ * boundary instead of waiting for the next balance poll.
+ * @param active - whether the badge is on screen.
+ * @returns the current epoch milliseconds.
+ */
+function useTierNow(active) {
+  const [now, setNow] = React.useState(() => Date.now())
+  React.useEffect(() => {
+    if (!active) return undefined
+    setNow(Date.now())
+    const timer = setInterval(() => setNow(Date.now()), 60_000)
+    return () => clearInterval(timer)
+  }, [active])
+  return now
+}
 
 /**
  * Render the balance chip and, when open, its portalled panel.
@@ -35,6 +59,19 @@ export function Corner({ advisor, wide, t }) {
     if (element !== null) setAnchor({ element, rect: element.getBoundingClientRect() })
     advisor.toggleOpen()
   }
+
+  // Peak/off-peak pricing is DeepSeek-only, so the badge appears exactly when the
+  // current model is routed through DeepSeek.
+  const showsTier = state.data?.sources?.balance?.kind === 'deepseek'
+  const now = useTierNow(showsTier)
+  const tier = showsTier ? currentTier(now) : 'offPeak'
+  const tierSwitch = showsTier ? nextTierSwitch(now) : null
+  const tierTitle = tierSwitch === null
+    ? ''
+    : `${t(tier === 'peak' ? 'corner.peak' : 'corner.offPeak')} · ${fill(t('corner.tierUntil'), {
+      time: formatBeijingSwitch(tierSwitch.atMs, now),
+      left: formatDuration(tierSwitch.remainingMs),
+    })} — ${t('corner.tierHint')}`
 
   const balance = state.data?.balance
   const ok = balance?.ok === true
@@ -64,6 +101,16 @@ export function Corner({ advisor, wide, t }) {
           {wide ? label : ok ? formatMoney(balance.total, balance.currency) : '—'}
         </span>
       </button>
+      {showsTier && (
+        <span
+          className={tier === 'peak' ? 'ma-tier-badge is-peak' : 'ma-tier-badge is-valley'}
+          title={tierTitle}
+          aria-label={tierTitle}
+        >
+          {tier === 'peak' ? <PeakIcon /> : <ValleyIcon />}
+          {wide && <span>{t(tier === 'peak' ? 'corner.peak' : 'corner.offPeak')}</span>}
+        </span>
+      )}
       <button
         ref={buttonRef}
         type="button"

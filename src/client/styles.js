@@ -231,6 +231,24 @@ export const CSS = `
 .ma-footer .ma-error { color: var(--dsw-alias-state-error-primary, #c0392b) }
 
 .ma-corner { display: flex; align-items: center; gap: 2px; width: 100% }
+.ma-tier-badge {
+  flex: 0 0 auto; display: inline-flex; align-items: center; gap: 3px;
+  padding: 2px 7px 2px 5px; border-radius: 999px;
+  background: var(--dsw-alias-bg-layer-2, rgba(0, 0, 0, .05));
+  font-size: 11px; line-height: 16px; white-space: nowrap; cursor: default;
+  transition: background 120ms ease;
+}
+.ma-tier-badge svg { display: block; flex: 0 0 auto }
+.ma-tier-badge.is-valley { color: var(--dsw-alias-state-success-primary, #1a7f37) }
+.ma-tier-badge.is-peak { color: var(--dsw-alias-state-warn-primary, #b45309) }
+/* A slow breath on the sun: peak is the expensive one, so it reads as "live". */
+.ma-tier-badge.is-peak svg { animation: ma-sun 4s ease-in-out infinite }
+@keyframes ma-sun {
+  0%, 100% { transform: scale(1) rotate(0deg) }
+  50% { transform: scale(1.12) rotate(10deg) }
+}
+@media (prefers-reduced-motion: reduce) { .ma-tier-badge.is-peak svg { animation: none } }
+.ma-corner.is-rail .ma-tier-badge { padding: 2px; gap: 0 }
 .ma-corner.is-rail { flex-direction: column; gap: 2px }
 .ma-balance-btn {
   appearance: none; flex: 0 1 auto; min-width: 0; max-width: 100%;

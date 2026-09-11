@@ -72,3 +72,56 @@ export function currentTier(at = Date.now()) {
   const hour = new Date(at).getUTCHours()
   return PEAK_HOURS.some(([start, end]) => hour >= start && hour < end) ? 'peak' : 'offPeak'
 }
+
+/** Format one instant as Beijing (UTC+8) wall-clock `HH:MM`. */
+export function formatBeijingClock(atMs) {
+  const shifted = new Date(atMs + 8 * 60 * 60 * 1000)
+  const pad = value => String(value).padStart(2, '0')
+  return `${pad(shifted.getUTCHours())}:${pad(shifted.getUTCMinutes())}`
+}
+
+/** Beijing weekday labels, indexed by `getUTCDay()`. */
+const WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+
+/**
+ * Format a switch instant for the tooltip. Beyond today it names the day, so a
+ * weekend countdown reads 「周一 09:00」 instead of a bare clock time.
+ * @param atMs - the switch instant.
+ * @param nowMs - the reference instant; defaults to now.
+ * @returns `HH:MM`, `明天 HH:MM`, or `周X HH:MM`.
+ */
+export function formatBeijingSwitch(atMs, nowMs = Date.now()) {
+  const clock = formatBeijingClock(atMs)
+  const dayOf = value => Math.floor((value + 8 * 60 * 60 * 1000) / 86_400_000)
+  const delta = dayOf(atMs) - dayOf(nowMs)
+  if (delta <= 0) return clock
+  if (delta === 1) return `明天 ${clock}`
+  return `${WEEKDAYS[new Date(atMs + 8 * 60 * 60 * 1000).getUTCDay()]} ${clock}`
+}
+
+/** Format a duration as `1 小时 20 分` / `42 分钟`. */
+export function formatDuration(ms) {
+  const minutes = Math.max(0, Math.round(ms / 60_000))
+  if (minutes < 60) return `${minutes} 分钟`
+  const hours = Math.floor(minutes / 60)
+  const rest = minutes % 60
+  return rest === 0 ? `${hours} 小时` : `${hours} 小时 ${rest} 分`
+}
+
+/**
+ * Find when the DeepSeek tier next flips, so the footer badge can count down.
+ * Scans forward at one-minute resolution; the schedule is simple enough that a
+ * scan is more obviously correct than a pile of boundary arithmetic.
+ * @param at - epoch milliseconds; defaults to now.
+ * @returns `{ atMs, intoPeak, remainingMs }`; three days out when nothing flips.
+ */
+export function nextTierSwitch(at = Date.now()) {
+  const current = currentTier(at)
+  const minute = 60_000
+  const limit = at + 3 * 24 * 60 * minute
+  for (let cursor = at + minute; cursor <= limit; cursor += minute) {
+    const tier = currentTier(cursor)
+    if (tier !== current) return { atMs: cursor, intoPeak: tier === 'peak', remainingMs: cursor - at }
+  }
+  return { atMs: limit, intoPeak: current !== 'peak', remainingMs: limit - at }
+}

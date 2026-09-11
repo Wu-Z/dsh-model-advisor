@@ -116,6 +116,10 @@ const TEMPLATES = {
   'panel.price.free': '免费',
   'panel.balance.unknown': '余额未知',
   'panel.balance.noApi': '该渠道未提供余额接口',
+  'corner.peak': '峰时',
+  'corner.offPeak': '谷时',
+  'corner.tierUntil': '至北京时间 {time}（还有 {left}）',
+  'corner.tierHint': '峰时 09:00–12:00、14:00–18:00，周末全天谷价',
 }
 const t = key => TEMPLATES[key] ?? key
 
@@ -311,6 +315,22 @@ const readyState = {
 const render = state => renderToStaticMarkup(
   React.createElement(Component, { advisor: fakeStore(state), wide: true, t }),
 )
+
+{
+  const html = render({ ...readyState, open: false })
+  const badged = html.includes('ma-tier-badge')
+  const tiered = html.includes('is-peak') || html.includes('is-valley')
+  check('tier badge shown on deepseek', badged && tiered, badged ? '' : 'no badge')
+  const offChannel = render({
+    ...readyState,
+    open: false,
+    data: {
+      ...readyState.data,
+      sources: { ...readyState.data.sources, balance: { kind: 'none', label: '', url: '', channel: 'moonshotai' } },
+    },
+  })
+  check('tier badge hidden off deepseek', !offChannel.includes('ma-tier-badge'))
+}
 
 // 3. the footer action in both widths, panel closed
 for (const wide of [true, false]) {

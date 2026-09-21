@@ -49,6 +49,8 @@ export function Corner({ advisor, wide, t }) {
 
   React.useEffect(() => { advisor.ensureLoaded() }, [advisor])
   React.useEffect(() => { if (!state.open) setAnchor(null) }, [state.open])
+  // Collapsing takes the panel button away, so an open panel has no anchor.
+  React.useEffect(() => { if (!wide) advisor.close() }, [wide, advisor])
 
   const toggle = () => {
     if (state.open) {
@@ -60,9 +62,10 @@ export function Corner({ advisor, wide, t }) {
     advisor.toggleOpen()
   }
 
-  // Peak/off-peak pricing is DeepSeek-only, so the badge appears exactly when the
-  // current model is routed through DeepSeek.
-  const showsTier = state.data?.sources?.balance?.kind === 'deepseek'
+  // A collapsed sidebar shows the balance and nothing else: no tier badge, no
+  // panel button. Peak/off-peak pricing is DeepSeek-only, so the badge appears
+  // exactly when the current model is routed through DeepSeek.
+  const showsTier = wide && state.data?.sources?.balance?.kind === 'deepseek'
   const now = useTierNow(showsTier)
   const tier = showsTier ? currentTier(now) : 'offPeak'
   const tierSwitch = showsTier ? nextTierSwitch(now) : null
@@ -111,7 +114,7 @@ export function Corner({ advisor, wide, t }) {
           {wide && <span>{t(tier === 'peak' ? 'corner.peak' : 'corner.offPeak')}</span>}
         </span>
       )}
-      <button
+      {wide && <button
         ref={buttonRef}
         type="button"
         className={state.open ? 'ma-icon-btn is-open' : 'ma-icon-btn'}
@@ -122,7 +125,7 @@ export function Corner({ advisor, wide, t }) {
         aria-expanded={state.open}
       >
         {state.open ? <IconChevronDownOutline14 /> : <IconChevronRightOutline14 />}
-      </button>
+      </button>}
       {state.open && createPortal(
         <Panel
           state={state}

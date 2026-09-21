@@ -248,7 +248,8 @@ export const CSS = `
   50% { transform: scale(1.12) rotate(10deg) }
 }
 @media (prefers-reduced-motion: reduce) { .ma-tier-badge.is-peak svg { animation: none } }
-.ma-corner.is-rail .ma-tier-badge { padding: 2px; gap: 0 }
+.ma-corner.is-rail { justify-content: center }
+.ma-corner.is-rail .ma-balance-btn { width: 100%; text-align: center }
 .ma-corner.is-rail { flex-direction: column; gap: 2px }
 .ma-balance-btn {
   appearance: none; flex: 0 1 auto; min-width: 0; max-width: 100%;

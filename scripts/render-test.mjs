@@ -312,8 +312,8 @@ const readyState = {
   },
 }
 
-const render = state => renderToStaticMarkup(
-  React.createElement(Component, { advisor: fakeStore(state), wide: true, t }),
+const render = (state, wide = true) => renderToStaticMarkup(
+  React.createElement(Component, { advisor: fakeStore(state), wide, t }),
 )
 
 {
@@ -335,11 +335,14 @@ const render = state => renderToStaticMarkup(
 // 3. the footer action in both widths, panel closed
 for (const wide of [true, false]) {
   try {
-    const html = render({ ...readyState, open: false })
+    const html = render({ ...readyState, open: false }, wide)
     const buttons = (html.match(/<button/g) ?? []).length
-    const ok = html.includes('¥41.21') && buttons === 2 && !html.includes('◈')
+    const badges = (html.match(/ma-tier-badge/g) ?? []).length
+    const ok = wide
+      ? html.includes('¥41.21') && buttons === 2 && badges === 1 && !html.includes('◈')
+      : html.includes('¥41.21') && buttons === 1 && badges === 0
     check(`corner renders (wide=${String(wide)})`, ok,
-      ok ? `${buttons} buttons` : `${buttons} buttons; ${html.slice(0, 140)}`)
+      ok ? `${buttons} buttons, ${badges} badge(s)` : `${buttons} buttons, ${badges} badge(s); ${html.slice(0, 140)}`)
   } catch (error) {
     check(`corner renders (wide=${String(wide)})`, false, String(error?.message ?? error))
   }
